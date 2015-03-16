@@ -23,6 +23,7 @@ public class GetCustomObjectActivity extends ActionBarActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_get_custom_object);
 
+        // Run the doInBackground for custom AsyncTask
         new MyCustomObjectTask().execute();
     }
 
@@ -56,26 +57,48 @@ public class GetCustomObjectActivity extends ActionBarActivity {
 
         private final String myUrl = "http://your-api.cloudapp.net/api/correct-path";
 
+        /**
+         * Runs on a separate thread than the UI thread
+         * @param params
+         * @return GET response
+         */
         @Override
         protected ResponseEntity<Greeting> doInBackground(Void... params) {
             RestTemplate rt = new RestTemplate();
+
+            // Add Mapper for Object to JSON conversion & vice versa
             rt.getMessageConverters().add(new MappingJackson2HttpMessageConverter());
+
             try {
+                // GET Request
                 return rt.getForEntity(myUrl, Greeting.class);
             } catch (HttpClientErrorException e) {
+                // Client made an error
+                // TODO: log exception
                 return new ResponseEntity<Greeting>(e.getStatusCode());
             } catch (HttpMessageConversionException e) {
+                // Error converting to/from JSON
+                // TODO: log exception
                 return new ResponseEntity<Greeting>(HttpStatus.BAD_REQUEST);
             } catch (RestClientException e) {
+                // Base class for exceptions from RestTemplate
+                // TODO: log exception
                 return new ResponseEntity<Greeting>(HttpStatus.BAD_REQUEST);
             }
         }
 
+
+        /**
+         * Runs on the UI thread - called after doInBackground
+         * @param response
+         */
         @Override
         protected void onPostExecute(ResponseEntity<Greeting> response) {
             if (response.getStatusCode().value() < 300) {
+                // Success - return the Greeting
                 doSomethingOnSuccess(response.getBody());
             } else {
+                // Error - return error message
                 doSomethingOnFailure(response.getStatusCode().getReasonPhrase());
             }
         }
